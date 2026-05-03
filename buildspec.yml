@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  # Pull from SSM Parameter Store
+  parameter-store:
+    DOCKER_USERNAME: /myapp/docker/username
+    DOCKER_REGISTRY:  /myapp/docker/registry_url
+
+  # Pull from Secrets Manager
+  secrets-manager:
+    DOCKER_PASSWORD: myapp/docker/password:docker_password
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging into Docker Hub...
+      - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+
+  build:
+    commands:
+      - echo Building Docker image...
+      - docker build -t myapp:latest .
+      - docker tag myapp:latest $DOCKER_USERNAME/myapp:latest
+
+  post_build:
+    commands:
+      - echo Pushing image to Docker Hub...
+      - docker push $DOCKER_USERNAME/myapp:latest
+      - echo Build complete!
