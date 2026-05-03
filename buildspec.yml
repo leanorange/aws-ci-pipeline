@@ -10,16 +10,28 @@ env:
 phases:
   pre_build:
     commands:
-      - echo "Username=$DOCKER_USERNAME"
+      # Confirm variable lengths (values stay masked)
+      - echo "Username length=${#DOCKER_USERNAME}"
       - echo "Password length=${#DOCKER_PASSWORD}"
+
+      # Strip any invisible whitespace/newlines that survive copy-paste
+      - DOCKER_USERNAME=$(echo -n "$DOCKER_USERNAME" | tr -d '[:space:]')
+      - DOCKER_PASSWORD=$(echo -n "$DOCKER_PASSWORD" | tr -d '[:space:]')
+
+      # Confirm lengths again after stripping — if they changed, you had junk chars
+      - echo "Username length after strip=${#DOCKER_USERNAME}"
+      - echo "Password length after strip=${#DOCKER_PASSWORD}"
+
       - printf '%s' "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
   build:
     commands:
-      - echo Building Docker image...
+      - echo "Building Docker image..."
       - docker build -t myapp:latest .
-      - docker tag myapp:latest $DOCKER_USERNAME/myapp:latest
+      - docker tag myapp:latest "$DOCKER_USERNAME/myapp:latest"
+
   post_build:
     commands:
-      - echo Pushing image to Docker Hub...
-      - docker push $DOCKER_USERNAME/myapp:latest
-      - echo Build complete!
+      - echo "Pushing image to Docker Hub..."
+      - docker push "$DOCKER_USERNAME/myapp:latest"
+      - echo "Build complete!"
